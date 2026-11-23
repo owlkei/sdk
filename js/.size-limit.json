@@ -1,0 +1,13 @@
+[
+  {
+    "name": "@owlkei/sdk/ws",
+    "path": "dist/ws/index.js",
+    "import": "*",
+    "limit": "6 kB"
+  },
+  {
+    "name": "owlkei.ws.min.js (script tag)",
+    "path": "dist/owlkei.ws.min.js",
+    "limit": "6 kB"
+  }
+]

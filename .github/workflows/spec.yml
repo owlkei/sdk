@@ -1,0 +1,22 @@
+name: Spec
+
+on:
+  push:
+    branches: [main]
+    paths: ["spec/**", "scripts/check-spec.mjs", ".github/workflows/spec.yml"]
+  pull_request:
+    paths: ["spec/**", "scripts/check-spec.mjs", ".github/workflows/spec.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: node scripts/check-spec.mjs
