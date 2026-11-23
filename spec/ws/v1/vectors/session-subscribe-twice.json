@@ -1,0 +1,55 @@
+{
+  "name": "subscribe-twice",
+  "kind": "session",
+  "description": "subscribing again to a held topic is acknowledged and changes nothing",
+  "rules": [
+    "V7"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"echo\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"2\",\"topic\":\"echo\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "2",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"3\",\"topic\":\"echo\",\"data\":{\"a\":1}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "reply",
+          "id": "3",
+          "requestId": "@id",
+          "data": {
+            "a": 1
+          }
+        }
+      }
+    }
+  ]
+}

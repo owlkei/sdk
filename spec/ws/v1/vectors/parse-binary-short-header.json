@@ -1,0 +1,14 @@
+{
+  "name": "binary-short-header",
+  "kind": "parse",
+  "description": "a binary frame shorter than its 4-byte header is invalid",
+  "rules": [
+    "V4"
+  ],
+  "input": {
+    "frameBase64": "AAA="
+  },
+  "want": {
+    "error": 400
+  }
+}

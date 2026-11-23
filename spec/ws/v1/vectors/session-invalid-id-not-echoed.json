@@ -1,0 +1,32 @@
+{
+  "name": "invalid-id-not-echoed",
+  "kind": "session",
+  "description": "an invalid id is never returned",
+  "rules": [
+    "V5",
+    "V19"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"zz LEAK\",\"topic\":\"echo\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "error",
+          "id": "@absent",
+          "requestId": "@same:rid",
+          "error": {
+            "code": 400,
+            "error": "Bad Request",
+            "message": "Invalid message",
+            "requestId": "@same:rid"
+          },
+          "retryAfter": "@absent"
+        }
+      }
+    }
+  ]
+}

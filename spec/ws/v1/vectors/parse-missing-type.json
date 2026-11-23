@@ -1,0 +1,14 @@
+{
+  "name": "missing-type",
+  "kind": "parse",
+  "description": "type is required",
+  "rules": [
+    "V3"
+  ],
+  "input": {
+    "text": "{\"id\":\"1\",\"topic\":\"echo\"}"
+  },
+  "want": {
+    "error": 400
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "unsubscribe-not-held",
+  "kind": "session",
+  "description": "an unsubscribe of a topic not held is acknowledged",
+  "rules": [
+    "V8"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"unsubscribe\",\"id\":\"1\",\"topic\":\"echo\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    }
+  ]
+}

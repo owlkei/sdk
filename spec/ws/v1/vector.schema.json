@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/owlkei/sdk/spec/ws/v1/vector.schema.json",
+  "title": "Owlkei WebSocket protocol v1 test vector",
+  "type": "object",
+  "required": ["name", "kind", "description"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "kind": { "enum": ["parse", "session"] },
+    "description": { "type": "string", "minLength": 1 },
+    "rules": { "type": "array", "items": { "type": "string", "pattern": "^V[0-9]+$" } },
+    "input": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "text": { "type": "string" },
+        "binary": {
+          "type": "object",
+          "required": ["envelope"],
+          "additionalProperties": false,
+          "properties": {
+            "envelope": { "type": "string" },
+            "dataBase64": { "type": "string" }
+          }
+        },
+        "frameBase64": { "type": "string" }
+      }
+    },
+    "want": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string" },
+        "id": { "type": "string" },
+        "topic": { "type": "string" },
+        "data": {},
+        "dataBase64": { "type": "string" },
+        "error": { "const": 400 }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "minProperties": 1,
+        "maxProperties": 1,
+        "additionalProperties": false,
+        "properties": {
+          "send": {
+            "type": "object",
+            "minProperties": 1,
+            "maxProperties": 1,
+            "additionalProperties": false,
+            "properties": {
+              "text": { "type": "string" },
+              "binary": {
+                "type": "object",
+                "required": ["envelope"],
+                "additionalProperties": false,
+                "properties": {
+                  "envelope": { "type": "string" },
+                  "dataBase64": { "type": "string" }
+                }
+              },
+              "frameBase64": { "type": "string" }
+            }
+          },
+          "expect": {
+            "type": "object",
+            "minProperties": 1,
+            "maxProperties": 1,
+            "additionalProperties": false,
+            "properties": {
+              "json": { "type": "object" },
+              "binary": {
+                "type": "object",
+                "required": ["json"],
+                "additionalProperties": false,
+                "properties": {
+                  "json": { "type": "object" },
+                  "dataBase64": { "type": "string" }
+                }
+              }
+            }
+          },
+          "expectClose": {
+            "type": "object",
+            "required": ["code"],
+            "additionalProperties": false,
+            "properties": { "code": { "type": "integer", "minimum": 0, "maximum": 4999 } }
+          },
+          "wait": {
+            "type": "object",
+            "required": ["ms"],
+            "additionalProperties": false,
+            "properties": { "ms": { "type": "integer", "minimum": 1, "maximum": 10000 } }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "parse" } } },
+      "then": { "required": ["input", "want"], "not": { "required": ["steps"] } }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "session" } } },
+      "then": { "required": ["steps"], "not": { "anyOf": [{ "required": ["input"] }, { "required": ["want"] }] } }
+    }
+  ]
+}

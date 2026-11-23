@@ -1,0 +1,45 @@
+{
+  "name": "text-to-binary-topic",
+  "kind": "session",
+  "description": "a text publish to a binary topic is 415",
+  "rules": [
+    "V12"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"binary\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"binary\",\"data\":{}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "error",
+          "id": "2",
+          "requestId": "@same:rid2",
+          "error": {
+            "code": 415,
+            "error": "Unsupported Media Type",
+            "message": "Unsupported Media Type",
+            "requestId": "@same:rid2"
+          },
+          "retryAfter": "@absent"
+        }
+      }
+    }
+  ]
+}

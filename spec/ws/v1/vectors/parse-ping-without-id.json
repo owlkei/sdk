@@ -1,0 +1,15 @@
+{
+  "name": "ping-without-id",
+  "kind": "parse",
+  "description": "a ping needs no id",
+  "rules": [
+    "V3",
+    "V13"
+  ],
+  "input": {
+    "text": "{\"type\":\"ping\"}"
+  },
+  "want": {
+    "type": "ping"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "binary-publish-empty",
+  "kind": "parse",
+  "description": "a binary publish may carry no bytes",
+  "rules": [
+    "V4"
+  ],
+  "input": {
+    "binary": {
+      "envelope": "{\"type\":\"publish\",\"id\":\"6\",\"topic\":\"binary\"}"
+    }
+  },
+  "want": {
+    "type": "publish",
+    "id": "6",
+    "topic": "binary",
+    "dataBase64": ""
+  }
+}

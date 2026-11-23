@@ -1,0 +1,45 @@
+{
+  "name": "publish-to-listen-only",
+  "kind": "session",
+  "description": "a publish to a topic that only listens is 405",
+  "rules": [
+    "V12"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"listen\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"listen\",\"data\":{}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "error",
+          "id": "2",
+          "requestId": "@same:rid2",
+          "error": {
+            "code": 405,
+            "error": "Method Not Allowed",
+            "message": "Method Not Allowed",
+            "requestId": "@same:rid2"
+          },
+          "retryAfter": "@absent"
+        }
+      }
+    }
+  ]
+}

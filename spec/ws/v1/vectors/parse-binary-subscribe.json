@@ -1,0 +1,16 @@
+{
+  "name": "binary-subscribe",
+  "kind": "parse",
+  "description": "only publish travels in a client's binary frame",
+  "rules": [
+    "V4"
+  ],
+  "input": {
+    "binary": {
+      "envelope": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"binary\"}"
+    }
+  },
+  "want": {
+    "error": 400
+  }
+}

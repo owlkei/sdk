@@ -1,0 +1,14 @@
+{
+  "name": "missing-id",
+  "kind": "parse",
+  "description": "a subscribe needs an id",
+  "rules": [
+    "V3"
+  ],
+  "input": {
+    "text": "{\"type\":\"subscribe\",\"topic\":\"echo\"}"
+  },
+  "want": {
+    "error": 400
+  }
+}

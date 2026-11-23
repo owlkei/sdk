@@ -1,0 +1,14 @@
+{
+  "name": "duplicate-member",
+  "kind": "parse",
+  "description": "a known member given twice is invalid",
+  "rules": [
+    "V3"
+  ],
+  "input": {
+    "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"id\":\"2\",\"topic\":\"echo\"}"
+  },
+  "want": {
+    "error": 400
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "not-json",
+  "kind": "parse",
+  "description": "a text frame that is not JSON is invalid",
+  "rules": [
+    "V2",
+    "V12"
+  ],
+  "input": {
+    "text": "hello"
+  },
+  "want": {
+    "error": 400
+  }
+}

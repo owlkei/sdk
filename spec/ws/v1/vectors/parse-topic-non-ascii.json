@@ -1,0 +1,14 @@
+{
+  "name": "topic-non-ascii",
+  "kind": "parse",
+  "description": "a non-ASCII byte is invalid",
+  "rules": [
+    "V5"
+  ],
+  "input": {
+    "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"phòng\"}"
+  },
+  "want": {
+    "error": 400
+  }
+}

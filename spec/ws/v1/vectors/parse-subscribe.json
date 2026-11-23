@@ -1,0 +1,17 @@
+{
+  "name": "subscribe",
+  "kind": "parse",
+  "description": "a subscribe has a type, an id and a topic",
+  "rules": [
+    "V3",
+    "V7"
+  ],
+  "input": {
+    "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"rooms.42.messages\"}"
+  },
+  "want": {
+    "type": "subscribe",
+    "id": "1",
+    "topic": "rooms.42.messages"
+  }
+}

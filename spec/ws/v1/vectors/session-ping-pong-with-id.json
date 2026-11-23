@@ -1,0 +1,23 @@
+{
+  "name": "ping-pong-with-id",
+  "kind": "session",
+  "description": "a pong carries the ping's valid id",
+  "rules": [
+    "V13"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"ping\",\"id\":\"p1\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "pong",
+          "id": "p1"
+        }
+      }
+    }
+  ]
+}

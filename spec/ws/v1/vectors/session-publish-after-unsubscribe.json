@@ -1,0 +1,60 @@
+{
+  "name": "publish-after-unsubscribe",
+  "kind": "session",
+  "description": "after an unsubscribe the topic is no longer held",
+  "rules": [
+    "V8",
+    "V9"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"echo\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"unsubscribe\",\"id\":\"2\",\"topic\":\"echo\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "2",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"3\",\"topic\":\"echo\",\"data\":{}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "error",
+          "id": "3",
+          "requestId": "@same:rid3",
+          "error": {
+            "code": 409,
+            "error": "Conflict",
+            "message": "Not subscribed",
+            "requestId": "@same:rid3"
+          },
+          "retryAfter": "@absent"
+        }
+      }
+    }
+  ]
+}

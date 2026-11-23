@@ -1,0 +1,17 @@
+{
+  "name": "member-order-free",
+  "kind": "parse",
+  "description": "members may come in any order, with whitespace",
+  "rules": [
+    "V2",
+    "V3"
+  ],
+  "input": {
+    "text": "{ \"topic\" : \"echo\" ,\n \"id\":\"1\", \"type\":\"subscribe\" }"
+  },
+  "want": {
+    "type": "subscribe",
+    "id": "1",
+    "topic": "echo"
+  }
+}

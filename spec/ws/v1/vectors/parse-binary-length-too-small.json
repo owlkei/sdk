@@ -1,0 +1,14 @@
+{
+  "name": "binary-length-too-small",
+  "kind": "parse",
+  "description": "an envelope length below 2 is invalid",
+  "rules": [
+    "V4"
+  ],
+  "input": {
+    "frameBase64": "AAAAAXs="
+  },
+  "want": {
+    "error": 400
+  }
+}

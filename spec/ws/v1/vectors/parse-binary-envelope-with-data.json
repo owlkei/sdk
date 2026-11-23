@@ -1,0 +1,17 @@
+{
+  "name": "binary-envelope-with-data",
+  "kind": "parse",
+  "description": "a binary envelope must not hold data",
+  "rules": [
+    "V4"
+  ],
+  "input": {
+    "binary": {
+      "envelope": "{\"type\":\"publish\",\"id\":\"1\",\"topic\":\"binary\",\"data\":{}}",
+      "dataBase64": "eA=="
+    }
+  },
+  "want": {
+    "error": 400
+  }
+}

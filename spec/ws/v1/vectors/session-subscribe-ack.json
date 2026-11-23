@@ -1,0 +1,24 @@
+{
+  "name": "subscribe-ack",
+  "kind": "session",
+  "description": "a subscribe to a declared topic is acknowledged",
+  "rules": [
+    "V7"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"listen\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    }
+  ]
+}

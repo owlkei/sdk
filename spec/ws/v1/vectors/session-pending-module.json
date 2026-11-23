@@ -1,0 +1,31 @@
+{
+  "name": "pending-module",
+  "kind": "session",
+  "description": "a topic of a module still starting is 503 with retryAfter",
+  "rules": [
+    "V12"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"pending\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "error",
+          "id": "1",
+          "requestId": "@same:rid1",
+          "error": {
+            "code": 503,
+            "error": "Service Unavailable",
+            "message": "Service Unavailable",
+            "requestId": "@same:rid1"
+          },
+          "retryAfter": "@any"
+        }
+      }
+    }
+  ]
+}

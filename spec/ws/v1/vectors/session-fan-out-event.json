@@ -1,0 +1,52 @@
+{
+  "name": "fan-out-event",
+  "kind": "session",
+  "description": "a fan-out reaches the subscribed publisher as an event",
+  "rules": [
+    "V10"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"rooms.7.messages\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"rooms.7.messages\",\"data\":{\"text\":\"hi\"}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "event",
+          "topic": "rooms.7.messages",
+          "data": {
+            "text": "hi"
+          },
+          "id": "@absent",
+          "requestId": "@absent"
+        }
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "reply",
+          "id": "2",
+          "requestId": "@id",
+          "data": "@absent"
+        }
+      }
+    }
+  ]
+}

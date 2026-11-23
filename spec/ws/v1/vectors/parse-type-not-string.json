@@ -1,0 +1,14 @@
+{
+  "name": "type-not-string",
+  "kind": "parse",
+  "description": "a known member with another JSON type is invalid",
+  "rules": [
+    "V3"
+  ],
+  "input": {
+    "text": "{\"type\":1,\"id\":\"1\",\"topic\":\"echo\"}"
+  },
+  "want": {
+    "error": 400
+  }
+}

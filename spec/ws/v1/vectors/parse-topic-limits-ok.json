@@ -1,0 +1,16 @@
+{
+  "name": "topic-limits-ok",
+  "kind": "parse",
+  "description": "16 segments are valid",
+  "rules": [
+    "V5"
+  ],
+  "input": {
+    "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"s.s.s.s.s.s.s.s.s.s.s.s.s.s.s.s\"}"
+  },
+  "want": {
+    "type": "subscribe",
+    "id": "1",
+    "topic": "s.s.s.s.s.s.s.s.s.s.s.s.s.s.s.s"
+  }
+}

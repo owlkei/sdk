@@ -1,0 +1,20 @@
+{
+  "name": "binary-publish",
+  "kind": "parse",
+  "description": "a binary publish carries raw bytes after the envelope",
+  "rules": [
+    "V4"
+  ],
+  "input": {
+    "binary": {
+      "envelope": "{\"type\":\"publish\",\"id\":\"5\",\"topic\":\"binary\"}",
+      "dataBase64": "AP8QcmF3"
+    }
+  },
+  "want": {
+    "type": "publish",
+    "id": "5",
+    "topic": "binary",
+    "dataBase64": "AP8QcmF3"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "echo-reply",
+  "kind": "session",
+  "description": "a publish is answered by a reply holding the handler's value",
+  "rules": [
+    "V9"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"echo\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"echo\",\"data\":{\"text\":\"hi\",\"n\":[1,2]}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "reply",
+          "id": "2",
+          "requestId": "@id",
+          "data": {
+            "text": "hi",
+            "n": [
+              1,
+              2
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

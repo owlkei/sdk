@@ -1,0 +1,15 @@
+{
+  "name": "topic-wildcard",
+  "kind": "parse",
+  "description": "a * is not a topic byte: there are no wildcard subscriptions",
+  "rules": [
+    "V5",
+    "V7"
+  ],
+  "input": {
+    "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"rooms.*\"}"
+  },
+  "want": {
+    "error": 400
+  }
+}

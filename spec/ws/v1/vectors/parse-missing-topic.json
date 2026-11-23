@@ -1,0 +1,14 @@
+{
+  "name": "missing-topic",
+  "kind": "parse",
+  "description": "a publish needs a topic",
+  "rules": [
+    "V3"
+  ],
+  "input": {
+    "text": "{\"type\":\"publish\",\"id\":\"1\",\"data\":{}}"
+  },
+  "want": {
+    "error": 400
+  }
+}

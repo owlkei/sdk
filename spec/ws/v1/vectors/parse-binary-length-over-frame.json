@@ -1,0 +1,14 @@
+{
+  "name": "binary-length-over-frame",
+  "kind": "parse",
+  "description": "an envelope length past the end of the frame is invalid",
+  "rules": [
+    "V4"
+  ],
+  "input": {
+    "frameBase64": "AAAALXsidHlwZSI6InB1Ymxpc2giLCJpZCI6IjEiLCJ0b3BpYyI6ImJpbmFyeSJ9"
+  },
+  "want": {
+    "error": 400
+  }
+}

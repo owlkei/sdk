@@ -1,0 +1,31 @@
+{
+  "name": "failed-module",
+  "kind": "session",
+  "description": "a topic of a failed module is 503 without retryAfter",
+  "rules": [
+    "V12"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"failed\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "error",
+          "id": "1",
+          "requestId": "@same:rid1",
+          "error": {
+            "code": 503,
+            "error": "Service Unavailable",
+            "message": "Service Unavailable",
+            "requestId": "@same:rid1"
+          },
+          "retryAfter": "@absent"
+        }
+      }
+    }
+  ]
+}

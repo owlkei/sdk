@@ -1,0 +1,17 @@
+{
+  "name": "publish-scalar-data",
+  "kind": "parse",
+  "description": "data may be any JSON value, a string here",
+  "rules": [
+    "V3"
+  ],
+  "input": {
+    "text": "{\"type\":\"publish\",\"id\":\"3\",\"topic\":\"echo\",\"data\":\"hi\"}"
+  },
+  "want": {
+    "type": "publish",
+    "id": "3",
+    "topic": "echo",
+    "data": "hi"
+  }
+}

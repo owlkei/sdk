@@ -1,0 +1,45 @@
+{
+  "name": "binary-reply",
+  "kind": "session",
+  "description": "a binary publish to a binary topic gets a binary reply with the same bytes",
+  "rules": [
+    "V4",
+    "V9"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"binary\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "binary": {
+          "envelope": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"binary\"}",
+          "dataBase64": "AQID"
+        }
+      }
+    },
+    {
+      "expect": {
+        "binary": {
+          "json": {
+            "type": "reply",
+            "id": "2",
+            "requestId": "@id"
+          },
+          "dataBase64": "AQID"
+        }
+      }
+    }
+  ]
+}

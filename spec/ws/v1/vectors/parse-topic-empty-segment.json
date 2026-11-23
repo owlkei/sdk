@@ -1,0 +1,14 @@
+{
+  "name": "topic-empty-segment",
+  "kind": "parse",
+  "description": "an empty segment is invalid",
+  "rules": [
+    "V5"
+  ],
+  "input": {
+    "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"rooms..42\"}"
+  },
+  "want": {
+    "error": 400
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "validated-ok",
+  "kind": "session",
+  "description": "a valid publish passes validation",
+  "rules": [
+    "V9"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"validated\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"validated\",\"data\":{\"name\":\"An\"}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "reply",
+          "id": "2",
+          "requestId": "@id",
+          "data": {
+            "name": "An"
+          }
+        }
+      }
+    }
+  ]
+}

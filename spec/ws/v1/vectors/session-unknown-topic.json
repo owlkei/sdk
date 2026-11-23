@@ -1,0 +1,31 @@
+{
+  "name": "unknown-topic",
+  "kind": "session",
+  "description": "a topic without a declaration is 404",
+  "rules": [
+    "V12"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"nowhere\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "error",
+          "id": "1",
+          "requestId": "@same:rid1",
+          "error": {
+            "code": 404,
+            "error": "Not Found",
+            "message": "Not Found",
+            "requestId": "@same:rid1"
+          },
+          "retryAfter": "@absent"
+        }
+      }
+    }
+  ]
+}

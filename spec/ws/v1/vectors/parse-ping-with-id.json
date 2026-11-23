@@ -1,0 +1,15 @@
+{
+  "name": "ping-with-id",
+  "kind": "parse",
+  "description": "a ping may carry an id",
+  "rules": [
+    "V13"
+  ],
+  "input": {
+    "text": "{\"type\":\"ping\",\"id\":\"p1\"}"
+  },
+  "want": {
+    "type": "ping",
+    "id": "p1"
+  }
+}

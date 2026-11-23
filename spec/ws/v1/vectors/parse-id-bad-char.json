@@ -1,0 +1,14 @@
+{
+  "name": "id-bad-char",
+  "kind": "parse",
+  "description": "an id outside [A-Za-z0-9._-] is invalid",
+  "rules": [
+    "V5"
+  ],
+  "input": {
+    "text": "{\"type\":\"subscribe\",\"id\":\"a b\",\"topic\":\"echo\"}"
+  },
+  "want": {
+    "error": 400
+  }
+}

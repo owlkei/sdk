@@ -1,0 +1,14 @@
+{
+  "name": "depth-33",
+  "kind": "parse",
+  "description": "nesting deeper than 32 anywhere in the frame is invalid",
+  "rules": [
+    "V6"
+  ],
+  "input": {
+    "text": "{\"type\":\"publish\",\"id\":\"1\",\"topic\":\"echo\",\"data\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}"
+  },
+  "want": {
+    "error": 400
+  }
+}

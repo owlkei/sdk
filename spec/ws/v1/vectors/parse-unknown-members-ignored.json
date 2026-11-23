@@ -1,0 +1,17 @@
+{
+  "name": "unknown-members-ignored",
+  "kind": "parse",
+  "description": "members the protocol does not define are ignored",
+  "rules": [
+    "V3",
+    "V18"
+  ],
+  "input": {
+    "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"echo\",\"extra\":{\"a\":[1]},\"x\":null}"
+  },
+  "want": {
+    "type": "subscribe",
+    "id": "1",
+    "topic": "echo"
+  }
+}

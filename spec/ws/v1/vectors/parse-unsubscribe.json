@@ -1,0 +1,17 @@
+{
+  "name": "unsubscribe",
+  "kind": "parse",
+  "description": "an unsubscribe has a type, an id and a topic",
+  "rules": [
+    "V3",
+    "V8"
+  ],
+  "input": {
+    "text": "{\"type\":\"unsubscribe\",\"id\":\"4\",\"topic\":\"echo\"}"
+  },
+  "want": {
+    "type": "unsubscribe",
+    "id": "4",
+    "topic": "echo"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "unknown-type",
+  "kind": "parse",
+  "description": "an unknown client type is invalid",
+  "rules": [
+    "V3",
+    "V12"
+  ],
+  "input": {
+    "text": "{\"type\":\"join\",\"id\":\"1\",\"topic\":\"echo\"}"
+  },
+  "want": {
+    "error": 400
+  }
+}

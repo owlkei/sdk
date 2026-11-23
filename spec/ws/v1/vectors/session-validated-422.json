@@ -1,0 +1,52 @@
+{
+  "name": "validated-422",
+  "kind": "session",
+  "description": "a failed validation is 422 with one entry per field",
+  "rules": [
+    "V11",
+    "V12"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"validated\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"validated\",\"data\":{}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "error",
+          "id": "2",
+          "requestId": "@same:rid2",
+          "error": {
+            "code": 422,
+            "error": "Unprocessable Entity",
+            "message": "Unprocessable Entity",
+            "requestId": "@same:rid2",
+            "fields": {
+              "name": {
+                "rule": "required",
+                "message": "This field is required"
+              }
+            }
+          },
+          "retryAfter": "@absent"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "publish-object",
+  "kind": "parse",
+  "description": "a publish carries any JSON value as data",
+  "rules": [
+    "V3",
+    "V9"
+  ],
+  "input": {
+    "text": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"echo\",\"data\":{\"text\":\"hi\",\"n\":[1,2]}}"
+  },
+  "want": {
+    "type": "publish",
+    "id": "2",
+    "topic": "echo",
+    "data": {
+      "text": "hi",
+      "n": [
+        1,
+        2
+      ]
+    }
+  }
+}

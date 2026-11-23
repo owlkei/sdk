@@ -1,0 +1,32 @@
+{
+  "name": "publish-before-subscribe",
+  "kind": "session",
+  "description": "a publish to a topic the connection does not hold is 409",
+  "rules": [
+    "V9",
+    "V12"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"1\",\"topic\":\"echo\",\"data\":{}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "error",
+          "id": "1",
+          "requestId": "@same:rid1",
+          "error": {
+            "code": 409,
+            "error": "Conflict",
+            "message": "Not subscribed",
+            "requestId": "@same:rid1"
+          },
+          "retryAfter": "@absent"
+        }
+      }
+    }
+  ]
+}

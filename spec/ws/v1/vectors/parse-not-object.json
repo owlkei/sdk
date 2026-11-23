@@ -1,0 +1,14 @@
+{
+  "name": "not-object",
+  "kind": "parse",
+  "description": "the envelope must be an object",
+  "rules": [
+    "V2"
+  ],
+  "input": {
+    "text": "[{\"type\":\"ping\"}]"
+  },
+  "want": {
+    "error": 400
+  }
+}

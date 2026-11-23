@@ -1,0 +1,23 @@
+{
+  "name": "ping-pong",
+  "kind": "session",
+  "description": "a JSON ping is answered by a pong",
+  "rules": [
+    "V13"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"ping\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "pong",
+          "id": "@absent"
+        }
+      }
+    }
+  ]
+}
