@@ -17,4 +17,14 @@ make deps    # install the JavaScript tooling and the git hooks
 make check   # what CI runs: the spec vectors, the TypeScript package and the Go module
 ```
 
+The session vectors run against a real Owlkei Go conformance server (`internal/conformance` in
+`owlkei/go`, whose `make conformance` starts it and runs both clients):
+
+```bash
+cd js && OWLKEI_CONFORMANCE_URL=ws://127.0.0.1:3000/ws yarn run conformance
+```
+
+Without `OWLKEI_CONFORMANCE_URL` the conformance tests are skipped. The Go client runs them from
+`owlkei/go` (`internal/conformance/sdkclient`), which starts the server in-process.
+
 See [CLAUDE.md](CLAUDE.md) for the layout and the rules every change follows.
