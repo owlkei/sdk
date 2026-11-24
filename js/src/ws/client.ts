@@ -9,7 +9,7 @@ import {
   isBinaryData,
   isTopic,
 } from "./frame.js";
-import { LIFETIME, delayFor, planFor } from "./retry.js";
+import { BUSY, LIFETIME, delayFor, planFor, subscribeRetryMs } from "./retry.js";
 
 /** The subprotocol of the wire protocol v1. */
 export const PROTOCOL = "owlkei.v1";
@@ -109,6 +109,7 @@ export class Client {
   readonly #pending = new Map<string, Pending>();
   readonly #outbox: { readonly id: string | undefined; readonly build: Outgoing }[] = [];
   readonly #topics = new Map<string, Topic>();
+  readonly #waits = new Set<() => void>();
   readonly #listeners: { [K in keyof ClientEvents]: Set<Listener<K>> } = {
     open: new Set(),
     reconnecting: new Set(),
@@ -149,8 +150,9 @@ export class Client {
 
   /**
    * Subscribes to `topic` and calls `handler` with each event. Resolves on the server's `ack`:
-   * every event published after that reaches the handler. Rejects with an `OwlkeiError` when the
-   * server refuses the topic.
+   * every event published after that reaches the handler. A `503` refusal is sent again after its
+   * `retryAfter` (1 s without one) on the same connection, as long as the wait ends within the
+   * request timeout; any other refusal, or the last `503`, rejects with an `OwlkeiError`.
    */
   async subscribe(topic: string, handler: EventHandler): Promise<Subscription> {
     if (!isTopic(topic)) throw new TypeError("owlkei: invalid topic");
@@ -201,6 +203,8 @@ export class Client {
     this.#state = "closed";
     clearTimeout(this.#retry);
     this.#stopTimers();
+    for (const wake of this.#waits) wake();
+    this.#waits.clear();
     this.#failAll(new ConnectionError("owlkei: the client was closed"));
     const socket = this.#socket;
     this.#socket = undefined;
@@ -209,13 +213,36 @@ export class Client {
   }
 
   async #join(topic: string, entry: Topic): Promise<void> {
+    const deadline = Date.now() + this.#requestTimeoutMs;
     try {
-      await this.#request({ type: "subscribe", topic });
+      for (;;) {
+        try {
+          await this.#request({ type: "subscribe", topic });
+          break;
+        } catch (err) {
+          if (!(err instanceof OwlkeiError) || err.code !== BUSY) throw err;
+          const wait = subscribeRetryMs(err.retryAfter);
+          if (Date.now() + wait >= deadline) throw err;
+          await this.#sleep(wait);
+        }
+      }
       entry.joined = true;
     } catch (err) {
       if (this.#topics.get(topic) === entry) this.#topics.delete(topic);
       throw err;
     }
+  }
+
+  #sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      const wake = (): void => {
+        clearTimeout(timer);
+        this.#waits.delete(wake);
+        resolve();
+      };
+      const timer = setTimeout(wake, ms);
+      this.#waits.add(wake);
+    });
   }
 
   #request(envelope: Omit<Envelope, "id">, data?: unknown): Promise<unknown> {

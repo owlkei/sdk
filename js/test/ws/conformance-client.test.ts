@@ -8,11 +8,13 @@ interface Received {
 }
 
 const url = process.env["OWLKEI_CONFORMANCE_URL"];
+const budgetURL = process.env["OWLKEI_CONFORMANCE_BUDGET_URL"];
+const BUDGET_CONNECTIONS = 51;
 const requestID = /^[0-9a-f]{16}$/;
 const clients: Client[] = [];
 
-function open(options: ClientOptions = {}): Client {
-  const client = new Client(url ?? "", { heartbeatMs: false, ...options });
+function open(options: ClientOptions = {}, at = url): Client {
+  const client = new Client(at ?? "", { heartbeatMs: false, ...options });
   clients.push(client);
   return client;
 }
@@ -50,6 +52,27 @@ function once(client: Client, event: "open" | "reconnecting"): Promise<number | 
       off();
       resolve(typeof args[1] === "number" ? args[1] : undefined);
     });
+  });
+}
+
+function reconnecting(client: Client): Promise<{ delayMs: number; closeCode: number }> {
+  return new Promise((resolve) => {
+    const off = client.on("reconnecting", (delayMs, closeCode) => {
+      off();
+      resolve({ delayMs, closeCode });
+    });
+  });
+}
+
+function filler(at: string): Promise<WebSocket> {
+  return new Promise((resolve, reject) => {
+    const socket = new WebSocket(at, "owlkei.v1");
+    socket.onopen = () => {
+      resolve(socket);
+    };
+    socket.onerror = () => {
+      reject(new Error("the budget app refused a filler connection"));
+    };
   });
 }
 
@@ -94,7 +117,7 @@ describe.skipIf(url === undefined)("Client against OWLKEI_CONFORMANCE_URL", () =
     ["pending", 503, "Service Unavailable", true],
     ["failed", 503, "Service Unavailable", false],
   ] as const)("rejects a subscribe to %s with %i", async (topic, code, message, hasRetry) => {
-    const client = open();
+    const client = open({ requestTimeoutMs: 1000 });
     const err = await refusal(client.subscribe(topic, () => undefined));
     expect(err.code).toBe(code);
     expect(err.message).toBe(message);
@@ -160,4 +183,25 @@ describe.skipIf(url === undefined)("Client against OWLKEI_CONFORMANCE_URL", () =
       topic: "rooms.8.messages",
     });
   });
+});
+
+describe.skipIf(budgetURL === undefined)("Client against OWLKEI_CONFORMANCE_BUDGET_URL", () => {
+  it("reconnects after a 1013 close and subscribes again", async () => {
+    const client = open({ backoff: { minMs: 10, maxMs: 20 } }, budgetURL);
+    await client.subscribe("echo", () => undefined);
+    const fillers = await Promise.all(
+      Array.from({ length: BUDGET_CONNECTIONS - 1 }, () => filler(budgetURL ?? "")),
+    );
+    try {
+      const lost = reconnecting(client);
+      client.ping().catch(() => undefined);
+      await expect(lost).resolves.toMatchObject({ closeCode: 1013 });
+      expect((await lost).delayMs).toBeGreaterThanOrEqual(1000);
+    } finally {
+      for (const socket of fillers) socket.close(1000);
+    }
+    await once(client, "open");
+    await client.subscribe("echo", () => undefined);
+    await expect(client.publish("echo", { text: "again" })).resolves.toEqual({ text: "again" });
+  }, 15_000);
 });

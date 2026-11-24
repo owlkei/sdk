@@ -47,13 +47,16 @@ invalid topic, before anything is sent.
 | Option             | Default                         | Meaning                                                                                                                                                                              |
 | ------------------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `reconnect`        | `true`                          | reconnect as the close code allows (shutdown, lost connection, lifetime, too slow, over budget); never after 1000, 1002, 1003, 1007, 1008, 4401, 4403 or an unknown 3xxx / 4xxx code |
-| `backoff`          | `{ minMs: 1000, maxMs: 30000 }` | exponential backoff with full jitter; 1013 waits four times longer, 4408 reconnects within `minMs`                                                                                   |
+| `backoff`          | `{ minMs: 1000, maxMs: 30000 }` | exponential backoff with full jitter; 1013 waits four times longer and at least 1 s, 4408 reconnects within `minMs`                                                                  |
 | `heartbeatMs`      | `25000`                         | interval of the JSON ping, `false` for none                                                                                                                                          |
 | `idleTimeoutMs`    | `60000`                         | a connection without any frame for this long counts as lost                                                                                                                          |
 | `requestTimeoutMs` | `10000`                         | how long a request waits for its answer                                                                                                                                              |
 | `binaryType`       | `"arraybuffer"`                 | binary events and replies as `ArrayBuffer` or `Blob`                                                                                                                                 |
 | `WebSocket`        | `globalThis.WebSocket`          | another implementation                                                                                                                                                               |
 
-After a reconnect the client subscribes again to every topic it held. Requests made while the
+After a reconnect the client subscribes again to every topic it held. A subscribe the server
+refuses with `503` (busy, a part still starting, or its WebSocket memory full) is sent again on the
+same connection after its `retryAfter`, or 1 s without one, as long as the wait ends within
+`requestTimeoutMs`; then the last `503` rejects. A publish is never sent again. Requests made while the
 connection is down wait for the next open (up to 256, each within `requestTimeoutMs`); requests
 already sent when it dropped reject with a `ConnectionError`.

@@ -34,6 +34,21 @@ async function subscribed(
   return { client, socket, handler };
 }
 
+function busy(id: string, retryAfter?: number): Record<string, unknown> {
+  return {
+    type: "error",
+    id,
+    requestId: "0123456789abcdef",
+    ...(retryAfter === undefined ? {} : { retryAfter }),
+    error: {
+      code: 503,
+      error: "Service Unavailable",
+      message: "Service Unavailable",
+      requestId: "0123456789abcdef",
+    },
+  };
+}
+
 beforeEach(() => {
   FakeSocket.reset();
   vi.useFakeTimers();
@@ -137,6 +152,73 @@ describe("subscribe", () => {
     expect(socket.lastJSON()).toEqual({ type: "subscribe", id: "2", topic: "guarded" });
     socket.receiveJSON({ type: "ack", id: "2", requestId: "0123456789abcdef" });
     await again;
+  });
+
+  it("sends a subscribe refused with a 503 again after its retryAfter", async () => {
+    const { client, socket } = open();
+    const done = client.subscribe("echo", vi.fn());
+    await settle();
+    socket.receiveJSON(busy("1", 2));
+    await settle();
+    vi.advanceTimersByTime(1999);
+    await settle();
+    expect(socket.sentJSON()).toHaveLength(1);
+    vi.advanceTimersByTime(1);
+    await settle();
+    expect(socket.lastJSON()).toEqual({ type: "subscribe", id: "2", topic: "echo" });
+    socket.receiveJSON({ type: "ack", id: "2", requestId: "0123456789abcdef" });
+    await expect(done).resolves.toMatchObject({ topic: "echo" });
+  });
+
+  it("sends a subscribe refused with a 503 without retryAfter again after one second", async () => {
+    const { client, socket } = open();
+    const done = client.subscribe("echo", vi.fn());
+    await settle();
+    socket.receiveJSON(busy("1"));
+    await settle();
+    vi.advanceTimersByTime(999);
+    await settle();
+    expect(socket.sentJSON()).toHaveLength(1);
+    vi.advanceTimersByTime(1);
+    await settle();
+    expect(socket.lastJSON()).toEqual({ type: "subscribe", id: "2", topic: "echo" });
+    socket.receiveJSON({ type: "ack", id: "2", requestId: "0123456789abcdef" });
+    await done;
+  });
+
+  it("rejects with the 503 when the next try would end after the request timeout", async () => {
+    const { client, socket } = open({ requestTimeoutMs: 3000 });
+    const done = client.subscribe("pending", vi.fn());
+    await settle();
+    socket.receiveJSON(busy("1", 1));
+    await settle();
+    vi.advanceTimersByTime(1000);
+    await settle();
+    socket.receiveJSON(busy("2", 5));
+    await expect(done).rejects.toMatchObject({ code: 503, retryAfter: 5 });
+    expect(socket.sentJSON()).toHaveLength(2);
+  });
+
+  it("does not send a publish refused with a 503 again", async () => {
+    const { client, socket } = await subscribed("echo");
+    const reply = client.publish("echo", {});
+    await settle();
+    socket.receiveJSON(busy("2", 1));
+    await expect(reply).rejects.toMatchObject({ code: 503 });
+    vi.advanceTimersByTime(5000);
+    await settle();
+    expect(socket.sentJSON()).toHaveLength(2);
+  });
+
+  it("stops waiting to send a subscribe again when the client closes", async () => {
+    const { client, socket } = open();
+    const done = client.subscribe("echo", vi.fn());
+    await settle();
+    socket.receiveJSON(busy("1", 5));
+    await settle();
+    client.close();
+    await expect(done).rejects.toBeInstanceOf(ConnectionError);
+    expect(socket.sentJSON()).toHaveLength(1);
   });
 
   it("refuses an invalid topic before sending anything", async () => {
@@ -401,7 +483,34 @@ describe("reconnect", () => {
     const delays: number[] = [];
     client.on("reconnecting", (delay) => delays.push(delay));
     socket.drop(1013);
-    expect(delays).toEqual([2000]);
+    expect(delays).toEqual([2500]);
+  });
+
+  it("waits at least one second after a 1013 close, whatever the backoff", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const { client, socket } = open({ backoff: { minMs: 10, maxMs: 20 } });
+    const delays: number[] = [];
+    client.on("reconnecting", (delay) => delays.push(delay));
+    socket.drop(1013);
+    vi.advanceTimersByTime(999);
+    expect(FakeSocket.instances).toHaveLength(1);
+    vi.advanceTimersByTime(1);
+    expect(FakeSocket.instances).toHaveLength(2);
+    expect(delays).toEqual([1000]);
+  });
+
+  it("subscribes again after a 1013 close", async () => {
+    const { socket, handler } = await subscribed("echo");
+    socket.drop(1013);
+    vi.advanceTimersByTime(4000);
+    const next = FakeSocket.last();
+    expect(next).not.toBe(socket);
+    next.open();
+    await settle();
+    expect(next.lastJSON()).toEqual({ type: "subscribe", id: "2", topic: "echo" });
+    next.receiveJSON({ type: "ack", id: "2", requestId: "0123456789abcdef" });
+    next.receiveJSON({ type: "event", topic: "echo", data: 3 });
+    expect(handler).toHaveBeenCalledWith(3, "echo");
   });
 
   it.each([1000, 1002, 1003, 1007, 1008, 4401, 4403, 4999])("stops after close code %i", (code) => {
