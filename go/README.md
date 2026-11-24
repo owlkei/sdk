@@ -36,10 +36,12 @@ Errors: `*ws.Error` (the server refused: `Code`, `Status`, `Message`, `Fields`, 
 `RetryAfter`), `*ws.ConnectionError` (`CloseCode`), `ErrTimeout`, `ErrClosed`, `ErrInvalidTopic`.
 
 `Options`: `Header`, `IsNoReconnect`, `MinBackoff` / `MaxBackoff` (1 s / 30 s, full jitter; 1013 waits
-four times longer, 4408 reconnects at once), `RequestTimeout` (10 s), `HeartbeatInterval` (25 s,
+four times longer and at least 1 s, 4408 reconnects at once), `RequestTimeout` (10 s), `HeartbeatInterval` (25 s,
 control pings), `OnError` (errors that answer no request), `NetDial`. The client never reconnects
 after 1000, 1002, 1003, 1007, 1008, 4401, 4403 or an unknown 3xxx / 4xxx code. After a reconnect it
-subscribes again to every topic with a handler.
+subscribes again to every topic with a handler. A subscribe the server refuses with `503` is sent
+again on the same connection after its `RetryAfter`, or 1 s without one, as long as the wait ends
+within `RequestTimeout`; then the last `503` is the error. A publish is never sent again.
 
 Until `go.owlkei.com` serves its vanity imports, `go.mod` replaces `go.owlkei.com/websocket` with the
 checkout at `../../websocket`.

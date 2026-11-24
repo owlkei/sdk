@@ -11,17 +11,20 @@ const (
 	codeBudget   = 1013
 	codeLifetime = 4408
 	codeTooSlow  = 4429
+	codeBusy     = 503
+	retryFloor   = time.Second
 )
 
 type plan struct {
 	retry bool
 	scale int
+	floor time.Duration
 }
 
 func planFor(code int) plan {
 	switch code {
 	case codeBudget:
-		return plan{retry: true, scale: 4}
+		return plan{retry: true, scale: 4, floor: retryFloor}
 	case codeLifetime:
 		return plan{retry: true, scale: 0}
 	case codeTooSlow:
@@ -45,7 +48,14 @@ func delayFor(p plan, attempt int, minWait, maxWait time.Duration, random func()
 			ceiling = c
 		}
 	}
-	return time.Duration(random() * float64(ceiling))
+	return p.floor + time.Duration(random()*float64(max(0, ceiling-p.floor)))
+}
+
+func subscribeRetryWait(retryAfter int) time.Duration {
+	if retryAfter <= 0 {
+		return retryFloor
+	}
+	return time.Duration(retryAfter) * time.Second
 }
 
 func jitter() float64 {

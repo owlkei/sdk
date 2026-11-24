@@ -158,3 +158,14 @@ func subscribeAcked(t *testing.T, c *Client, sc *serverConn, topic string, h Han
 	}
 	return r.sub
 }
+
+func busy(id any, retryAfter int) map[string]any {
+	m := map[string]any{
+		"type": "error", "id": id, "requestId": "0123456789abcdef",
+		"error": map[string]any{"code": 503, "error": "Service Unavailable", "message": "Service Unavailable", "requestId": "0123456789abcdef"},
+	}
+	if retryAfter > 0 {
+		m["retryAfter"] = retryAfter
+	}
+	return m
+}

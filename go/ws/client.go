@@ -131,7 +131,9 @@ func Dial(ctx context.Context, url string, opts *Options) (*Client, error) {
 }
 
 // Subscribe subscribes the connection to topic and adds handler. It returns on the server's ack:
-// every event published after that reaches the handler. A refusal is an *Error.
+// every event published after that reaches the handler. A 503 refusal is sent again after its
+// RetryAfter (1s without one) on the same connection, as long as the wait ends within
+// Options.RequestTimeout; any other refusal, or the last 503, is an *Error.
 func (c *Client) Subscribe(ctx context.Context, name string, handler Handler) (*Subscription, error) {
 	if !IsTopic(name) {
 		return nil, ErrInvalidTopic
@@ -260,7 +262,7 @@ func (c *Client) shutdown() (*websocket.Conn, bool) {
 }
 
 func (c *Client) join(ctx context.Context, name string, t *topic) error {
-	_, err := c.request(ctx, envelope{Type: "subscribe", Topic: name}, nil, false)
+	err := c.subscribe(ctx, name)
 	c.mu.Lock()
 	t.err = err
 	if err == nil {
@@ -271,6 +273,31 @@ func (c *Client) join(ctx context.Context, name string, t *topic) error {
 	close(t.ready)
 	c.mu.Unlock()
 	return err
+}
+
+func (c *Client) subscribe(ctx context.Context, name string) error {
+	deadline := time.Now().Add(c.opts.RequestTimeout)
+	for {
+		_, err := c.request(ctx, envelope{Type: "subscribe", Topic: name}, nil, false)
+		var e *Error
+		if !errors.As(err, &e) || e.Code != codeBusy {
+			return err
+		}
+		wait := subscribeRetryWait(e.RetryAfter)
+		if !time.Now().Add(wait).Before(deadline) {
+			return err
+		}
+		timer := time.NewTimer(wait)
+		select {
+		case <-timer.C:
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-c.closed:
+			timer.Stop()
+			return ErrClosed
+		}
+	}
 }
 
 func (c *Client) remove(s *Subscription) bool {

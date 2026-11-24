@@ -105,6 +105,110 @@ func TestSubscribe_RefusalIsATypedError(t *testing.T) {
 	}
 }
 
+func TestSubscribe_BusySentAgainAfterRetryAfter(t *testing.T) {
+	s := newServer(t)
+	c, sc := s.dial(nil)
+	done := make(chan error, 1)
+	go func() {
+		_, err := c.Subscribe(context.Background(), "echo", func(Event) {})
+		done <- err
+	}()
+	m := sc.readJSON()
+	refused := time.Now()
+	sc.send(busy(m["id"], 1))
+	again := sc.readJSON()
+	if waited := time.Since(refused); waited < 900*time.Millisecond {
+		t.Error(test.DiffMessage(waited, ">= 1s", "V17: the subscribe waits retryAfter before it is sent again"))
+	}
+	if again["type"] != "subscribe" || again["topic"] != "echo" || again["id"] == m["id"] {
+		t.Error(test.DiffMessage(again, "a new subscribe of echo", "V17: the same subscribe with a new id"))
+	}
+	sc.ack(again["id"])
+	if err := <-done; err != nil {
+		t.Error(test.DiffMessage(err, nil, "V17: the retried subscribe returns on its ack"))
+	}
+}
+
+func TestSubscribe_BusyWithoutRetryAfterSentAgainAfterOneSecond(t *testing.T) {
+	s := newServer(t)
+	c, sc := s.dial(nil)
+	done := make(chan error, 1)
+	go func() {
+		_, err := c.Subscribe(context.Background(), "echo", func(Event) {})
+		done <- err
+	}()
+	m := sc.readJSON()
+	refused := time.Now()
+	sc.send(busy(m["id"], 0))
+	again := sc.readJSON()
+	if waited := time.Since(refused); waited < 900*time.Millisecond {
+		t.Error(test.DiffMessage(waited, ">= 1s", "V17: without retryAfter the subscribe waits 1s"))
+	}
+	sc.ack(again["id"])
+	if err := <-done; err != nil {
+		t.Error(test.DiffMessage(err, nil, "V17: the retried subscribe returns on its ack"))
+	}
+}
+
+func TestSubscribe_BusyPastTheRequestTimeoutIsTheError(t *testing.T) {
+	s := newServer(t)
+	c, sc := s.dial(&Options{RequestTimeout: 500 * time.Millisecond})
+	done := make(chan error, 1)
+	go func() {
+		_, err := c.Subscribe(context.Background(), "pending", func(Event) {})
+		done <- err
+	}()
+	m := sc.readJSON()
+	sc.send(busy(m["id"], 1))
+	var e *Error
+	select {
+	case err := <-done:
+		if !errors.As(err, &e) || e.Code != 503 || e.RetryAfter != 1 {
+			t.Error(test.DiffMessage(err, "*Error 503 with RetryAfter 1", "V17: a wait past the request timeout returns the 503"))
+		}
+	case <-time.After(400 * time.Millisecond):
+		t.Fatal("V17: the subscribe did not return the 503 at once")
+	}
+}
+
+func TestSubscribe_BusyWaitEndsAtClose(t *testing.T) {
+	s := newServer(t)
+	c, sc := s.dial(nil)
+	done := make(chan error, 1)
+	go func() {
+		_, err := c.Subscribe(context.Background(), "echo", func(Event) {})
+		done <- err
+	}()
+	m := sc.readJSON()
+	sc.send(busy(m["id"], 5))
+	_ = c.Close()
+	select {
+	case err := <-done:
+		if !errors.Is(err, ErrClosed) {
+			t.Error(test.DiffMessage(err, ErrClosed, "V17: Close ends the wait before a retry"))
+		}
+	case <-time.After(time.Second):
+		t.Fatal("V17: Close did not end the wait before a retry")
+	}
+}
+
+func TestPublish_BusyIsNotSentAgain(t *testing.T) {
+	s := newServer(t)
+	c, sc := s.dial(nil)
+	subscribeAcked(t, c, sc, "echo", func(Event) {})
+	done := make(chan error, 1)
+	go func() {
+		_, err := c.Publish(context.Background(), "echo", map[string]int{"a": 1})
+		done <- err
+	}()
+	m := sc.readJSON()
+	sc.send(busy(m["id"], 1))
+	var e *Error
+	if err := <-done; !errors.As(err, &e) || e.Code != 503 {
+		t.Error(test.DiffMessage(err, "*Error 503", "V17: only a subscribe is sent again"))
+	}
+}
+
 func TestSubscribe_InvalidTopicSendsNothing(t *testing.T) {
 	s := newServer(t)
 	c, _ := s.dial(nil)
@@ -330,6 +434,27 @@ func TestReconnect_AfterShutdownSubscribesAgain(t *testing.T) {
 	}
 }
 
+func TestReconnect_AfterBudgetCloseSubscribesAgain(t *testing.T) {
+	s := newServer(t)
+	c, sc := s.dial(nil)
+	subscribeAcked(t, c, sc, "echo", func(Event) {})
+	closed := time.Now()
+	if err := sc.conn.Close(websocket.CloseTryAgainLater, ""); err != nil {
+		var ce *websocket.CloseError
+		if !errors.As(err, &ce) {
+			t.Fatal(err)
+		}
+	}
+	next := s.accept()
+	if waited := time.Since(closed); waited < 900*time.Millisecond {
+		t.Error(test.DiffMessage(waited, ">= 1s", "V15: after 1013 the client waits at least 1s"))
+	}
+	m := next.readJSON()
+	if m["type"] != "subscribe" || m["topic"] != "echo" {
+		t.Error(test.DiffMessage(m, "a subscribe of echo", "V15, V16: subscribe again after a 1013 close"))
+	}
+}
+
 func TestReconnect_StopsOnAuthentication(t *testing.T) {
 	s := newServer(t)
 	c, sc := s.dial(nil)
@@ -385,8 +510,8 @@ func TestClose_EndsPendingCalls(t *testing.T) {
 func TestPlanFor_CloseCodes(t *testing.T) {
 	cases := map[int]plan{
 		1000: {}, 1002: {}, 1003: {}, 1007: {}, 1008: {}, 4401: {}, 4403: {}, 4999: {}, 3000: {},
-		1001: {true, 1}, 1006: {true, 1}, 1009: {true, 1}, 1011: {true, 1}, 1012: {true, 1}, 4429: {true, 1},
-		1013: {true, 4}, 4408: {true, 0},
+		1001: {true, 1, 0}, 1006: {true, 1, 0}, 1009: {true, 1, 0}, 1011: {true, 1, 0}, 1012: {true, 1, 0}, 4429: {true, 1, 0},
+		1013: {true, 4, time.Second}, 4408: {true, 0, 0},
 	}
 	for code, want := range cases {
 		if got := planFor(code); got != want {
@@ -399,13 +524,26 @@ func TestDelayFor_GrowsAndCaps(t *testing.T) {
 	top := func() float64 { return 0.999 }
 	got := []time.Duration{}
 	for attempt := 0; attempt < 5; attempt++ {
-		got = append(got, delayFor(plan{true, 1}, attempt, time.Second, 5*time.Second, top).Round(time.Millisecond))
+		got = append(got, delayFor(plan{true, 1, 0}, attempt, time.Second, 5*time.Second, top).Round(time.Millisecond))
 	}
 	want := []time.Duration{999 * time.Millisecond, 1998 * time.Millisecond, 3996 * time.Millisecond, 4995 * time.Millisecond, 4995 * time.Millisecond}
 	if !reflect.DeepEqual(got, want) {
 		t.Error(test.DiffMessage(got, want, "V17: exponential backoff with a cap"))
 	}
-	if d := delayFor(plan{true, 0}, 7, time.Second, 5*time.Second, top); d >= time.Second {
+	if d := delayFor(plan{true, 0, 0}, 7, time.Second, 5*time.Second, top); d >= time.Second {
 		t.Error(test.DiffMessage(d, "< 1s", "V15: 4408 reconnects at once"))
+	}
+}
+
+func TestDelayFor_BudgetCloseWaitsAtLeastOneSecond(t *testing.T) {
+	p := planFor(codeBudget)
+	got := []time.Duration{
+		delayFor(p, 0, time.Millisecond, 5*time.Millisecond, func() float64 { return 0 }),
+		delayFor(p, 0, time.Millisecond, 5*time.Millisecond, func() float64 { return 0.999 }),
+		delayFor(p, 0, time.Second, 30*time.Second, func() float64 { return 0.5 }),
+	}
+	want := []time.Duration{time.Second, time.Second, 2500 * time.Millisecond}
+	if !reflect.DeepEqual(got, want) {
+		t.Error(test.DiffMessage(got, want, "V15: after 1013 the client waits a jittered backoff of at least 1s"))
 	}
 }
