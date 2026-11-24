@@ -131,7 +131,7 @@ Rule numbers (V1-V20) are the design's, so a test or a bug report can cite them.
   | 1008 | too many invalid messages | do not reconnect automatically |
   | 1009 | a frame over 65,536 bytes | do not resend |
   | 1011 | server error | reconnect with backoff |
-  | 1013 | the server is out of its memory budget | reconnect with a longer backoff |
+  | 1013 | the server is out of memory for WebSockets (its budget is full) | reconnect with a jittered backoff of at least 1 s, then subscribe again to every topic |
   | 4408 | the connection reached its maximum lifetime | reconnect at once, with jitter |
   | 4429 | the client reads too slowly | reconnect with backoff |
   | 4401, 4403 | reserved for authentication | do not reconnect |
@@ -146,7 +146,11 @@ Rule numbers (V1-V20) are the design's, so a test or a bug report can cite them.
   client. After a reconnect the client subscribes again, then reads what it missed over REST and
   drops duplicates by the application's own identifiers.
 - **V17. Reconnect.** Exponential backoff with full jitter, from 1 s to 30 s; a `retryAfter` or the
-  table of V15 overrides it. Pending promises fail with a typed connection error.
+  table of V15 overrides it. Pending promises fail with a typed connection error. A `503` `error` to
+  a `subscribe` (the server is busy, a part of it is still starting, or its memory budget is full)
+  means: send the same subscribe again, on the same connection, after `retryAfter` seconds, or 1 s
+  without it (design 0027 Amendment 3 › K3). A client stops when the wait would end after its request
+  timeout, and the caller gets the last 503. A client never sends a `publish` again by itself.
 
 ## Compatibility
 
@@ -189,3 +193,10 @@ use them:
 | `slow` | anyone | waits 200 ms, then replies nothing |
 | `pending` | a module that never becomes ready (503 with `retryAfter`) | - |
 | `failed` | a module whose start failed (503 without `retryAfter`) | - |
+
+A second app, the **budget app**, declares the same topics without `pending` and `failed`. Its
+`WS.MaxMemory` is 1 MiB and its `MaxConnections` 51, with no limit per address: 51 open connections
+hold 51 × 20 KiB of the 1,048,576 bytes, so less than one message cost (8 KiB) is left, and the next
+message of any of them, a `ping` included, is closed with 1013. A suite fills it with 50 idle
+connections next to its client's to check that the client reconnects after 1013 and subscribes
+again (V15, V17).
