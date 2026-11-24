@@ -2,7 +2,7 @@
   "name": "@owlkei/sdk",
   "version": "0.0.0",
   "description": "Client SDK for Owlkei Go apps: WebSocket first, HTTP and more later",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "sideEffects": false,
   "engines": {
