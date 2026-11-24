@@ -24,7 +24,9 @@ The session vectors run against a real Owlkei Go conformance server (`internal/c
 cd js && OWLKEI_CONFORMANCE_URL=ws://127.0.0.1:3000/ws yarn run conformance
 ```
 
-Without `OWLKEI_CONFORMANCE_URL` the conformance tests are skipped. The Go client runs them from
+It runs every session vector on the platform `WebSocket` with the SDK's frame codec, and the
+`Client` itself against the conformance app's topics (replies, typed errors, fan-out, binary,
+unsubscribe, reconnect). Without `OWLKEI_CONFORMANCE_URL` the conformance tests are skipped. The Go client runs them from
 `owlkei/go` (`internal/conformance/sdkclient`), which starts the server in-process.
 
 See [CLAUDE.md](CLAUDE.md) for the layout and the rules every change follows.

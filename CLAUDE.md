@@ -39,7 +39,7 @@ make deps        # yarn install (root hooks + js/)
 make check       # spec + js + go, what CI runs
 make check-js    # cd js && yarn run check: prettier, eslint (strictTypeChecked), tsc, vitest, tsup, publint, attw, size-limit
 make check-go    # cd go: gofmt, go vet, golangci-lint, go test -race
-cd js && OWLKEI_CONFORMANCE_URL=ws://127.0.0.1:3000/ws yarn run conformance  # session vectors against a server
+cd js && OWLKEI_CONFORMANCE_URL=ws://127.0.0.1:3000/ws yarn run conformance  # session vectors and the Client against a server
 ```
 
 The conformance server is `internal/conformance` in `owlkei/go`; its `make conformance` runs the
