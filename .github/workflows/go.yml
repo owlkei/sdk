@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go/go.mod
-          cache-dependency-path: go/go.sum
+          cache-dependency-path: go/go.mod
       - name: Format
         run: test -z "$(gofmt -l .)" || (gofmt -l .; exit 1)
       - run: go vet ./...
