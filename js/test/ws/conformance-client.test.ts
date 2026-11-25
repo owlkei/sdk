@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { Client, OwlkeiError, type ClientOptions, type EventHandler } from "../../src/ws/index.js";
+import {
+  Client,
+  OwlkeiError,
+  type ClientOptions,
+  type EventHandler,
+  type WebSocketConstructor,
+  type WebSocketLike,
+} from "../../src/ws/index.js";
 
 interface Received {
   readonly data: unknown;
@@ -204,4 +211,71 @@ describe.skipIf(budgetURL === undefined)("Client against OWLKEI_CONFORMANCE_BUDG
     await client.subscribe("echo", () => undefined);
     await expect(client.publish("echo", { text: "again" })).resolves.toEqual({ text: "again" });
   }, 15_000);
+});
+
+function sessionBase(at: string): string {
+  return at.replace(/^ws/, "http").replace(/\/ws$/, "");
+}
+
+async function post(at: string, path: string, token?: string): Promise<Response> {
+  const headers: Record<string, string> =
+    token === undefined ? {} : { Authorization: `Bearer ${token}` };
+  return fetch(sessionBase(at) + path, { method: "POST", headers });
+}
+
+async function login(at: string): Promise<string> {
+  const response = await post(at, "/session/login");
+  expect(response.status).toBe(200);
+  const body = (await response.json()) as { token: string };
+  expect(body.token).toMatch(/^oks1_[A-Za-z0-9_-]{43}$/);
+  return body.token;
+}
+
+function signedIn(token: string): WebSocketConstructor {
+  const Base = WebSocket as unknown as new (url: string, init: unknown) => WebSocketLike;
+  class Authenticated extends Base {
+    constructor(address: string, protocols: string) {
+      super(address, { protocols, headers: { Authorization: `Bearer ${token}` } });
+    }
+  }
+  return Authenticated;
+}
+
+describe.skipIf(url === undefined)("Client sessions against OWLKEI_CONFORMANCE_URL", () => {
+  it("is refused ~me with a 401 while anonymous and stays connected", async () => {
+    const client = open();
+    const err = await refusal(client.subscribe("~me", () => undefined));
+    expect(err.code).toBe(401);
+    expect(err.message).toBe("Unauthorized");
+    expect(client.state).toBe("open");
+    await expect(client.ping()).resolves.toBeUndefined();
+  });
+
+  it("receives the events the server sends to its user on ~me", async () => {
+    const token = await login(url ?? "");
+    const client = open({ WebSocket: signedIn(token) });
+    const events = inbox();
+    await client.subscribe("~me", events.handler);
+    expect((await post(url ?? "", "/session/notify", token)).status).toBe(204);
+    await expect(events.next()).resolves.toEqual({ data: { hello: "you" }, topic: "~me" });
+  });
+
+  it("is closed with 4401 when its session ends and does not reconnect", async () => {
+    const token = await login(url ?? "");
+    const client = open({ WebSocket: signedIn(token), backoff: { minMs: 10, maxMs: 20 } });
+    await client.subscribe("~me", () => undefined);
+    const reconnects: number[] = [];
+    client.on("reconnecting", (_delayMs, closeCode) => reconnects.push(closeCode));
+    const closed = new Promise<number>((resolve) => {
+      client.on("close", resolve);
+    });
+
+    expect((await post(url ?? "", "/session/logout", token)).status).toBe(204);
+
+    await expect(closed).resolves.toBe(4401);
+    expect(client.state).toBe("closed");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(reconnects).toEqual([]);
+    expect((await post(url ?? "", "/session/notify", token)).status).toBe(401);
+  });
 });

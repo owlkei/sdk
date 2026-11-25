@@ -523,6 +523,20 @@ describe("reconnect", () => {
     expect(FakeSocket.instances).toHaveLength(1);
   });
 
+  it("rejects the requests already sent with 4401 and does not reconnect", async () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const { client, socket } = await subscribed("echo");
+    const reply = client.publish("echo", 1);
+    await settle();
+    socket.drop(4401);
+    const err = (await reply.catch((e: unknown) => e)) as ConnectionError;
+    expect(err).toBeInstanceOf(ConnectionError);
+    expect(err.closeCode).toBe(4401);
+    vi.advanceTimersByTime(60_000);
+    expect(client.state).toBe("closed");
+    expect(FakeSocket.instances).toHaveLength(1);
+  });
+
   it("rejects the requests already sent with the close code", async () => {
     const { client, socket } = await subscribed("echo");
     const reply = client.publish("echo", 1);

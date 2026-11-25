@@ -469,6 +469,33 @@ func TestReconnect_StopsOnAuthentication(t *testing.T) {
 	}
 }
 
+func TestReconnect_PendingRequestGets4401AndTheClientEnds(t *testing.T) {
+	s := newServer(t)
+	c, sc := s.dial(nil)
+	subscribeAcked(t, c, sc, "echo", func(Event) {})
+	done := make(chan error, 1)
+	go func() {
+		_, err := c.Publish(context.Background(), "echo", 1)
+		done <- err
+	}()
+	sc.readJSON()
+
+	_ = sc.conn.Close(4401, "")
+
+	var ce *ConnectionError
+	if err := <-done; !errors.As(err, &ce) || ce.CloseCode != 4401 {
+		t.Error(test.DiffMessage(err, "ConnectionError 4401", "V15: a pending request gets 4401, the session ended"))
+	}
+	select {
+	case <-c.closed:
+	case <-time.After(5 * time.Second):
+		t.Fatal("V15: 4401 must end the client, not reconnect with the same credentials")
+	}
+	if _, err := c.Subscribe(context.Background(), "echo", func(Event) {}); !errors.Is(err, ErrClosed) {
+		t.Error(test.DiffMessage(err, ErrClosed, "V15: no call is sent after 4401"))
+	}
+}
+
 func TestReconnect_PendingRequestGetsTheCloseCode(t *testing.T) {
 	s := newServer(t)
 	c, sc := s.dial(&Options{IsNoReconnect: true})

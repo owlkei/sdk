@@ -5,13 +5,14 @@ repository implements it, passes the vectors in [`vectors/`](vectors) and the co
 against a real server. The server's source of truth is design 0027 of Owlkei Go (section V); this
 file is its transcription, and a change to it starts there.
 
-Rule numbers (V1-V20) are the design's, so a test or a bug report can cite them.
+Rule numbers (V1-V21) are the design's, so a test or a bug report can cite them.
 
 - [Transport](#transport)
 - [Envelope](#envelope)
 - [Messages](#messages)
 - [Errors](#errors)
 - [Heartbeat and close](#heartbeat-and-close)
+- [Per-user topic](#per-user-topic)
 - [Delivery and reconnect](#delivery-and-reconnect)
 - [Compatibility](#compatibility)
 - [Test vectors](#test-vectors)
@@ -134,10 +135,17 @@ Rule numbers (V1-V20) are the design's, so a test or a bug report can cite them.
   | 1013 | the server is out of memory for WebSockets (its budget is full) | reconnect with a jittered backoff of at least 1 s, then subscribe again to every topic |
   | 4408 | the connection reached its maximum lifetime | reconnect at once, with jitter |
   | 4429 | the client reads too slowly | reconnect with backoff |
-  | 4401, 4403 | reserved for authentication | do not reconnect |
+  | 4401 | the session ended (logout, revoked or expired) | do not reconnect with the same credentials; sign in again |
+  | 4403 | reserved | do not reconnect |
   | no close frame | the connection was lost, or idle for 60 s | reconnect with backoff |
 
   The server never sends a close reason.
+
+## Per-user topic
+
+- **V21. `~me`.** `~me` is the per-user topic. A signed-in connection that subscribes to it receives
+  the events the server sends to its own user; an anonymous connection gets `error` 401. `publish` to
+  it gets 405. No application topic is named `~me`.
 
 ## Delivery and reconnect
 
@@ -193,6 +201,17 @@ use them:
 | `slow` | anyone | waits 200 ms, then replies nothing |
 | `pending` | a module that never becomes ready (503 with `retryAfter`) | - |
 | `failed` | a module whose start failed (503 without `retryAfter`) | - |
+
+The app also signs a fixed test user in, so the clients can test `~me` (V21) and 4401 (V15):
+
+| Route | Answer |
+|---|---|
+| `POST /session/login` | 200 `{"token": "oks1_…"}`, a new session token every time |
+| `POST /session/logout` with `Authorization: Bearer <token>` | 204; the session's connections close with 4401 |
+| `POST /session/notify` with `Authorization: Bearer <token>` | 204 after sending `{"hello":"you"}` to the session's user on `~me`; 401 without a valid session |
+
+A connection signs in with `Authorization: Bearer <token>` at the handshake, never with the token in
+the URL.
 
 A second app, the **budget app**, declares the same topics without `pending` and `failed`. Its
 `WS.MaxMemory` is 1 MiB and its `MaxConnections` 51, with no limit per address: 51 open connections
