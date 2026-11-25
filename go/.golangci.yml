@@ -25,6 +25,10 @@ linters:
       - path: _test\.go
         linters: [gosec]
         text: "G102|G103|G110|G115|G116|G204|G301|G304|G306|G404|G602|G702|G703"
+      # SHA-1 computes Sec-WebSocket-Accept as RFC 6455 § 4.2.2 requires; it protects nothing.
+      - path: internal/websocket/fn\.go
+        linters: [gosec]
+        text: "G401|G505"
 
 issues:
   max-issues-per-linter: 0

@@ -1,7 +1,8 @@
 # go.owlkei.com/sdk
 
 The Go client SDK for Owlkei Go apps. Package `ws` speaks the WebSocket wire protocol v1
-(`owlkei.v1`, [spec](../spec/ws/v1/README.md)) on `go.owlkei.com/websocket`.
+(`owlkei.v1`, [spec](../spec/ws/v1/README.md)) on its own RFC 6455 implementation (`internal/websocket`,
+the one Owlkei Go serves with). It has no dependency outside the standard library.
 
 ```go
 c, err := ws.Dial(ctx, "wss://app.example.com/ws", &ws.Options{
@@ -43,5 +44,5 @@ subscribes again to every topic with a handler. A subscribe the server refuses w
 again on the same connection after its `RetryAfter`, or 1 s without one, as long as the wait ends
 within `RequestTimeout`; then the last `503` is the error. A publish is never sent again.
 
-Until `go.owlkei.com` serves its vanity imports, `go.mod` replaces `go.owlkei.com/websocket` with the
-checkout at `../../websocket`.
+`go get go.owlkei.com/sdk` works once `go.owlkei.com` serves its vanity imports (before the first
+release).

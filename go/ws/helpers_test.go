@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"go.owlkei.com/websocket"
+	"go.owlkei.com/sdk/internal/websocket"
 )
 
 type fakeServer struct {

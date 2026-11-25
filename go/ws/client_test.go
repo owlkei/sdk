@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"go.owlkei.com/sdk/internal/test"
-	"go.owlkei.com/websocket"
+	"go.owlkei.com/sdk/internal/websocket"
 )
 
 func TestDial_OffersTheProtocol(t *testing.T) {

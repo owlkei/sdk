@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"go.owlkei.com/websocket"
+	"go.owlkei.com/sdk/internal/websocket"
 )
 
 // Protocol is the subprotocol of the wire protocol v1, offered in every handshake.

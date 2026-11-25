@@ -25,8 +25,9 @@ least two protocols need it.
 - **Every client passes the spec's vectors and the conformance suite** against a real Owlkei Go
   server. A behavior without a vector or a conformance test is not done.
 - **Each language is a normal project** with its full tooling; `make check` runs what CI runs.
-- **No runtime dependency** in either language (the Go client uses `go.owlkei.com/websocket`, the
-  Owlkei RFC 6455 module). Size budgets in `js/.size-limit.json` are checked in CI.
+- **No runtime dependency** in either language (the Go client uses `go/internal/websocket`, a copy of
+  the RFC 6455 package of Owlkei Go, `internal/websocket`, kept identical by Owlkei Go's
+  `make ws-sync-check`; change it there first). Size budgets in `js/.size-limit.json` are checked in CI.
 - **Errors never leak** a server's internal text: the client surfaces the server's error body
   (`code`, `error`, `message`, `fields`, `requestId`) as typed errors.
 - Code is written as production code: small public API, every exported name documented, tests for
@@ -55,12 +56,12 @@ bundle. Targets: browsers, Node 22+, Deno, Bun and React Native (the platform `W
 
 ## Go
 
-Go 1.27, standard library plus `go.owlkei.com/websocket`. gofmt, vet, golangci-lint (`go/.golangci.yml`),
+Go 1.27, standard library only. gofmt, vet, golangci-lint (`go/.golangci.yml`),
 `go test -race`. Exported identifiers have godoc comments (a public module); unexported code has
 none. Tests: `Test<Subject>_<Behavior>`, failures through `internal/test.DiffMessage`.
 
-Until `go.owlkei.com` serves its vanity imports, `go/go.mod` replaces `go.owlkei.com/websocket` with
-a local checkout; CI of the Go job needs the module published first.
+`go/internal/websocket` is not edited here: Owlkei Go's `internal/websocket` (proven by Autobahn) is
+the source, and its `make ws-sync-check` fails when the two differ.
 
 ## Commits
 
