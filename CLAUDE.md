@@ -9,12 +9,13 @@ The client SDK for Owlkei Go apps: one repository for every language and every p
 | Path | Holds |
 |---|---|
 | `spec/<protocol>/v<N>/` | the wire contract between an Owlkei Go server and every client: the spec (`README.md`) and its test vectors (`vectors/*.json`) |
-| `js/` | the npm package `@owlkei/sdk` in TypeScript; one subpath entry per protocol (`@owlkei/sdk/ws`), plus a `<script>` bundle per entry (`window.Owlkei`) |
+| `js/` | the npm package `@owlkei/sdk` in TypeScript; one subpath entry per protocol (`@owlkei/sdk/ws`, `@owlkei/sdk/devtools`), plus a `<script>` bundle per entry (`window.Owlkei`) |
 | `go/` | the Go module `go.owlkei.com/sdk`; one package per protocol (`go.owlkei.com/sdk/ws`) |
 | `scripts/` | repository tooling (`check-spec.mjs`) |
 
-Protocols today: WebSocket (`ws`). HTTP and GraphQL come later, each as a new folder in `spec/`,
-`js/src/` and `go/`; adding one never changes another. Shared code lives in `core/` only when at
+Protocols today: WebSocket (`ws`), and the devtools (`devtools`, TypeScript only), which runs on
+`owlkei.v1` and is built on `@owlkei/sdk/ws` by composition. HTTP and GraphQL come later, each as a
+new folder in `spec/`, `js/src/` and `go/`; adding one never changes another. Shared code lives in `core/` only when at
 least two protocols need it.
 
 ## Rules
@@ -41,11 +42,12 @@ make check       # spec + js + go, what CI runs
 make check-js    # cd js && yarn run check: prettier, eslint (strictTypeChecked), tsc, vitest, tsup, publint, attw, size-limit
 make check-go    # cd go: gofmt, go vet, golangci-lint, go test -race
 cd js && OWLKEI_CONFORMANCE_URL=ws://127.0.0.1:3000/ws OWLKEI_CONFORMANCE_BUDGET_URL=ws://127.0.0.1:3001/ws yarn run conformance  # session vectors and the Client against a server and its budget app
+# add OWLKEI_CONFORMANCE_DEVTOOLS_URL=http://127.0.0.1:3000 OWLKEI_CONFORMANCE_DEVTOOLS_TOKEN=okd1_… for the devtools vectors and client
 ```
 
-The conformance server is `internal/conformance` in `owlkei/go` (`PORT`, and `BUDGET_PORT` for the
-budget app); its `make conformance` runs the TypeScript suite above and the Go client suite
-(`internal/conformance/sdkclient`) against it.
+The conformance server is `internal/conformance` in `owlkei/go` (`PORT`, `BUDGET_PORT` for the
+budget app, `DEVTOOLS_TOKEN_FILE` for the devtools token); its `make conformance` runs the
+TypeScript suite above and the Go client suite (`internal/conformance/sdkclient`) against it.
 
 ## TypeScript
 
