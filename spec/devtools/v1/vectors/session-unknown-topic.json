@@ -1,0 +1,30 @@
+{
+  "name": "unknown-topic",
+  "kind": "session",
+  "description": "a topic that is not one of the seven is 404",
+  "rules": [
+    "V3"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"zz-nope\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "error",
+          "id": "1",
+          "requestId": "@id",
+          "error": {
+            "code": 404,
+            "error": "Not Found",
+            "message": "Not Found",
+            "requestId": "@id"
+          }
+        }
+      }
+    }
+  ]
+}

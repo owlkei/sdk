@@ -1,0 +1,90 @@
+{
+  "name": "snapshot-chunks",
+  "kind": "session",
+  "description": "the controller section of the conformance app (ASCII, 24,577 to 49,152 bytes) comes in two chunks; its last chunk releases the kept text, so asking it again is 409",
+  "rules": [
+    "S2",
+    "S4",
+    "S5"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"snapshot\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"snapshot\",\"data\":{\"section\":\"controller\"}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "reply",
+          "id": "2",
+          "requestId": "@id",
+          "data": {
+            "schema": 1,
+            "section": "controller",
+            "id": "@same:id",
+            "size": "@same:size",
+            "offset": 0,
+            "text": "@any"
+          }
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"3\",\"topic\":\"snapshot\",\"data\":{\"section\":\"controller\",\"id\":{{id}},\"offset\":24576}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "reply",
+          "id": "3",
+          "requestId": "@id",
+          "data": {
+            "schema": 1,
+            "section": "controller",
+            "id": "@same:id",
+            "size": "@same:size",
+            "offset": 24576,
+            "text": "@any"
+          }
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"4\",\"topic\":\"snapshot\",\"data\":{\"section\":\"controller\",\"id\":{{id}},\"offset\":24576}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "error",
+          "id": "4",
+          "requestId": "@id",
+          "error": {
+            "code": 409,
+            "error": "Conflict",
+            "message": "Snapshot text is gone",
+            "requestId": "@id"
+          }
+        }
+      }
+    }
+  ]
+}

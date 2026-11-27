@@ -1,0 +1,43 @@
+{
+  "name": "run-job-unknown",
+  "kind": "session",
+  "description": "run-job with a name no job has replies unknown, without a run ID",
+  "rules": [
+    "S8"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"run-job\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"run-job\",\"data\":{\"name\":\"zz-none\"}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "reply",
+          "id": "2",
+          "requestId": "@id",
+          "data": {
+            "schema": 1,
+            "status": "unknown",
+            "run_id": "@absent"
+          }
+        }
+      }
+    }
+  ]
+}

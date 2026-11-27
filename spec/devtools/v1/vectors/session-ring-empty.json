@@ -1,0 +1,45 @@
+{
+  "name": "ring-empty",
+  "kind": "session",
+  "description": "reading the ring of a stream that holds nothing (the conformance app has no storage module) gives first and last 0 and no event",
+  "rules": [
+    "V7"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"storage\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"storage\",\"data\":{}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "reply",
+          "id": "2",
+          "requestId": "@id",
+          "data": {
+            "schema": 1,
+            "first": 0,
+            "last": 0,
+            "events": [],
+            "more": false
+          }
+        }
+      }
+    }
+  ]
+}

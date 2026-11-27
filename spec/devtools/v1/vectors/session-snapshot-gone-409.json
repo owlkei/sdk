@@ -1,0 +1,44 @@
+{
+  "name": "snapshot-gone-409",
+  "kind": "session",
+  "description": "an offset above 0 with an id the connection does not keep is 409 Snapshot text is gone",
+  "rules": [
+    "S5"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"snapshot\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"snapshot\",\"data\":{\"section\":\"controller\",\"id\":999999999,\"offset\":1}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "error",
+          "id": "2",
+          "requestId": "@id",
+          "error": {
+            "code": 409,
+            "error": "Conflict",
+            "message": "Snapshot text is gone",
+            "requestId": "@id"
+          }
+        }
+      }
+    }
+  ]
+}

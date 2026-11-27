@@ -1,0 +1,30 @@
+{
+  "name": "publish-before-subscribe",
+  "kind": "session",
+  "description": "a publish to a devtools topic the connection has not subscribed to is 409",
+  "rules": [
+    "V3"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"1\",\"topic\":\"errors\",\"data\":{}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "error",
+          "id": "1",
+          "requestId": "@id",
+          "error": {
+            "code": 409,
+            "error": "Conflict",
+            "message": "Not subscribed",
+            "requestId": "@id"
+          }
+        }
+      }
+    }
+  ]
+}

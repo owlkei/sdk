@@ -1,0 +1,48 @@
+{
+  "name": "snapshot-section",
+  "kind": "session",
+  "description": "publish to snapshot reads a section in one chunk; a section the app does not have is the text null",
+  "rules": [
+    "S1",
+    "S2",
+    "S3"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"snapshot\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"snapshot\",\"data\":{\"section\":\"pre_route\"}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "reply",
+          "id": "2",
+          "requestId": "@id",
+          "data": {
+            "schema": 1,
+            "section": "pre_route",
+            "id": "@any",
+            "size": 4,
+            "offset": 0,
+            "text": "null"
+          }
+        }
+      }
+    }
+  ]
+}

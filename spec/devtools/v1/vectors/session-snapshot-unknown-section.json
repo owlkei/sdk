@@ -1,0 +1,51 @@
+{
+  "name": "snapshot-unknown-section",
+  "kind": "session",
+  "description": "a section that is not a key of the snapshot is 422 with fields.section rule oneof, never an echo of the value",
+  "rules": [
+    "S1",
+    "V6"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"snapshot\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"snapshot\",\"data\":{\"section\":\"zz-LEAK\"}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "error",
+          "id": "2",
+          "requestId": "@id",
+          "error": {
+            "code": 422,
+            "error": "Unprocessable Entity",
+            "message": "Unprocessable Entity",
+            "requestId": "@id",
+            "fields": {
+              "section": {
+                "rule": "oneof",
+                "message": "Must be one of the allowed values"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
