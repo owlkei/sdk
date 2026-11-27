@@ -9,5 +9,16 @@
     "name": "owlkei.ws.min.js (script tag)",
     "path": "dist/owlkei.ws.min.js",
     "limit": "6 kB"
+  },
+  {
+    "name": "@owlkei/sdk/devtools",
+    "path": "dist/devtools/index.js",
+    "import": "*",
+    "limit": "8 kB"
+  },
+  {
+    "name": "owlkei.devtools.min.js (script tag)",
+    "path": "dist/owlkei.devtools.min.js",
+    "limit": "8 kB"
   }
 ]

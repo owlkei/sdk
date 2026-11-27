@@ -1,0 +1,43 @@
+{
+  "name": "run-job-started",
+  "kind": "session",
+  "description": "run-job with the name of a job runs it and replies started with its run ID",
+  "rules": [
+    "S8"
+  ],
+  "steps": [
+    {
+      "send": {
+        "text": "{\"type\":\"subscribe\",\"id\":\"1\",\"topic\":\"run-job\"}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "ack",
+          "id": "1",
+          "requestId": "@id"
+        }
+      }
+    },
+    {
+      "send": {
+        "text": "{\"type\":\"publish\",\"id\":\"2\",\"topic\":\"run-job\",\"data\":{\"name\":\"tick\"}}"
+      }
+    },
+    {
+      "expect": {
+        "json": {
+          "type": "reply",
+          "id": "2",
+          "requestId": "@id",
+          "data": {
+            "schema": 1,
+            "status": "started",
+            "run_id": "@id"
+          }
+        }
+      }
+    }
+  ]
+}
